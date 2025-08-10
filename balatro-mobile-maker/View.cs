@@ -258,7 +258,7 @@ internal class View
         }
 
         //TODO: Implement for OSX and Linux!!!
-        if ((!_iosBuild || _androidBuild) && Platform.isWindows)
+        if ((!_iosBuild || _androidBuild))
         {
             #region Android options
             #region Auto-install
@@ -275,7 +275,7 @@ internal class View
 
             #region Save transfer
 
-            if (directoryExists(Environment.GetEnvironmentVariable("AppData") + "\\Balatro") && AskQuestion("Would you like to transfer saves from your Steam copy of Balatro to your Android device?"))
+            if (directoryExists(Platform.getGameSaveLocation()) && AskQuestion("Would you like to transfer saves from your copy of Balatro to your Android device?"))
             {
                 Log("Thanks to TheCatRiX for figuring out save transfers!");
 

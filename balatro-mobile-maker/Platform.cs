@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 //using System.IO;
 using static balatro_mobile_maker.View;
 using static balatro_mobile_maker.Tools;
+using System.IO;
 
 namespace balatro_mobile_maker;
 
@@ -114,17 +115,63 @@ internal class Platform
 
         return "";
     }
+    
+  static IEnumerable<string> SafeEnumerateDirectories(string path)
+    {
+        Queue<string> dirs = new Queue<string>();
+        dirs.Enqueue(path);
 
+        while (dirs.Count > 0)
+        {
+            string current = dirs.Dequeue();
+            yield return current;
+
+            try
+            {
+                foreach (var subDir in Directory.EnumerateDirectories(current))
+                {
+                    dirs.Enqueue(subDir);
+                }
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // skip this directory
+            }
+            catch (DirectoryNotFoundException)
+            {
+                // skip this directory
+            }
+            catch (PathTooLongException)
+            {
+                // skip overly long paths
+            }
+            catch (IOException)
+            {
+                // skip special files that look like dirs but aren't valid to enumerate
+            }
+        }
+    }
 
     public static string getGameSaveLocation()
     {
         if (isWindows)
             return Environment.GetEnvironmentVariable("AppData") + "\\Balatro";
 
-        //TODO: Test Linux location
         if (isLinux)
-            return Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/.local/share/Steam/steamapps/compatdata/2379780/pfx/drive_c/users/steamuser/AppData/Roaming/Balatro";
+        {
+            string startPath = "/home/" + Environment.UserName;
+            string searchPattern = Path.Combine("AppData", "Roaming", "Balatro");
 
+            foreach (var dir in SafeEnumerateDirectories(startPath))
+            {
+                if (dir.Replace(Path.DirectorySeparatorChar, '/')
+                       .Contains(searchPattern.Replace(Path.DirectorySeparatorChar, '/')))
+                {
+                    Console.WriteLine(dir);
+                    return dir;
+                }
+            }
+        }
         //TODO: Implement
         if (isOSX)
            return Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) + "/Library/Application Support/Balatro";
